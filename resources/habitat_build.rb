@@ -28,16 +28,38 @@ end
 
 action :publish do
   execute 'upload-pkg' do
-    command lazy {
-      "#{hab_binary} pkg upload" \
-      " --url #{url}" \
-      " #{hab_studio_path}/src/results/#{artifact}"
-    }
-    env(
-      'HOME' => home_dir,
-      'HAB_AUTH_TOKEN' => auth_token
-    )
+    command lazy { "#{hab_binary} pkg upload --url #{url} #{hab_studio_path}/src/results/#{artifact}" }
+    env('HOME' => home_dir,
+        'HAB_AUTH_TOKEN' => auth_token)
     live_stream new_resource.live_stream
     sensitive true
+  end
+
+  load_delivery_chef_config
+  chef_data_bag new_resource.name
+
+  # We need to be clear here to ensure that the magic done by cheffish
+  # doesn't cause any unexpected data bag item naming or contents.
+  # Thus, we have a unique project name for the resource, which does
+  # not get used because we're setting the `id` and the `data_bag`
+  # properties. We need to use `lazy {}` on the `id` and `raw_data`
+  # because those contain calculated values from a previously
+  # converged resource, `hab_build`, above.
+  #
+  chef_data_bag_item "store-#{new_resource.name}-artifact-data" do
+    id lazy { build_version }
+    data_bag new_resource.name
+    raw_data lazy {
+      { 'id' => build_version,
+        'version' => build_version,
+        'artifact' => last_build_env.merge('type' => 'hart'),
+        'delivery_data' => node['delivery'] }
+    }
+  end
+
+  chef_environment get_acceptance_environment do
+    override_attributes lazy {
+      { new_resource.name => build_version }
+    }
   end
 end

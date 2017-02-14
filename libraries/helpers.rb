@@ -60,7 +60,7 @@ def hab_studio_slug
   [
     node['delivery']['change']['project'],
     node['delivery']['change']['stage'],
-    node['delivery']['change']['phase'],
+    node['delivery']['change']['phase']
   ].join('-')
 end
 

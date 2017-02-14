@@ -29,7 +29,7 @@ if changed_habitat_files?
 
   # set local variables we're going to use in `lazy` properties later in
   # the chef run
-  build_version = nil
+  # build_version = nil
   project_name = node['delivery']['change']['project']
 
   # Only build and publish if we have a depot token
@@ -48,28 +48,36 @@ if changed_habitat_files?
   #########################################################################
   # Save artifact data in data bag and environment (delivery-truck compat)
   #########################################################################
+  # ruby_block 'load-build-output' do
+  #   block do
+  #     last_build_env = Hash[*::File.read(::File.join(hab_studio_path,
+  #                                                    'src/results/last_build.env')).split(/[=\n]/)]
+
+  #     artifact = last_build_env['pkg_artifact']
+  #     build_version = [last_build_env['pkg_version'], last_build_env['pkg_release']].join('-')
+  #   end
+  # end
 
   # update a data bag with the artifact build info
-  load_delivery_chef_config
-  chef_data_bag project_name
+  # load_delivery_chef_config
+  # chef_data_bag project_name
 
-  chef_data_bag_item 'store-artifact-data' do
-    # build version is calculated in the hab_build resource above, so
-    # we need to lazy load it.
-    name lazy { build_version }
-    raw_data lazy do
-      {
-        'id' => build_version,
-        'version' => build_version,
-        'artifact' => last_build_env.merge('type' => 'hart'),
-        'delivery_data' => node['delivery'],
-      }
-    end
-  end
+  # chef_data_bag_item "store-#{project_name}-artifact-data" do
+  #   id lazy { build_version }
+  #   data_bag project_name
+  #   raw_data lazy do
+  #     {
+  #       'id' => build_version,
+  #       'version' => build_version,
+  #       'artifact' => last_build_env.merge('type' => 'hart'),
+  #       'delivery_data' => node['delivery'],
+  #     }
+  #   end
+  # end
 
-  chef_environment get_acceptance_environment do
-    override_attributes lazy do
-      { project_name => build_version }
-    end
-  end
+  # chef_environment get_acceptance_environment do
+  #   override_attributes lazy do
+  #     { project_name => build_version }
+  #   end
+  # end
 end
